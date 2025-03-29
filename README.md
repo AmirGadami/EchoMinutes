@@ -1,4 +1,4 @@
-# 🌍 EchoMinutes
+# 🗣️📋 EchoMinutes
 
 **EchoMinutes** is an AI-powered tool that transcribes and summarizes audio recordings from city council and public meetings into structured, readable meeting minutes. It uses OpenAI Whisper for transcription and a quantized LLM (Phi-3 or LLaMA) for summarization.
 
