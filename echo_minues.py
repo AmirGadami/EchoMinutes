@@ -11,28 +11,22 @@ from transformers import (
 from config import AUDIO_MODEL,LLM_MODEL,AUDIO_NAME
 
 OPENAI_API_TOKEN = os.getenv('OPENAI_API_KEY')
+openai = OpenAI()
 
 def transcrib_audio(audio_path):
     openai = OpenAI()
     with open(audio_path,'rb') as audio_file:
         transcription = openai.audio.transcriptions.create(
             model = AUDIO_MODEL,
-            file = AUDIO_NAME,
+            file = audio_file,
             response_format = 'text',
         )
     return transcription
 
 def generate_minutes(transcription_text):
-    system_message = (
-        "You are an assistant that produces minutes of meetings from transcripts, "
-        "with summary, key discussion points, takeaways and action items with owners, in markdown."
-    )
+    system_message = "You are an assistant that produces minutes of meetings from transcripts, with summary, key discussion points, takeaways and action items with owners, in markdown."
 
-    user_prompt = (
-        f"Below is an extract transcript of a Denver council meeting. Please write minutes in markdown, "
-        f"including a summary with attendees, location and date; discussion points; takeaways; and action items with owners.\n\n"
-        f"{transcription_text}"
-    )
+    user_prompt = f"Below is an extract transcript of a Denver council meeting. Please write minutes in markdown, including a summary with attendees, location and date; discussion points; takeaways; and action items with owners. {transcription_text}"
 
     messages = [
         {"role": "system", "content": system_message},
@@ -48,13 +42,13 @@ def generate_minutes(transcription_text):
 
     tokenizer = AutoTokenizer.from_pretrained(LLM_MODEL)
     tokenizer.pad_token = tokenizer.eos_token
-    inputs = tokenizer.apply_chat_template(messages, return_tensors="pt").to("cuda")
+    inputs = tokenizer.apply_chat_template(messages, return_tensors="pt").to("mps")
     streamer = TextStreamer(tokenizer)
 
     model = AutoModelForCausalLM.from_pretrained(
         LLM_MODEL,
-        device_map="auto",
-        quantization_config=quant_config
+        device_map="auto"
+        # quantization_config=quant_config
     )
 
     outputs = model.generate(inputs, max_new_tokens=2000, streamer=streamer)
